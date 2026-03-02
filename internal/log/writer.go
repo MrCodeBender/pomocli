@@ -31,15 +31,20 @@ func FormatSession(s Session) string {
 	if task == "" {
 		task = "—"
 	}
-	return fmt.Sprintf("## Sesión %d — %s\n\n| Campo      | Valor                |\n|------------|----------------------|\n| Tarea      | %-20s |\n| Inicio     | %-20s |\n| Fin        | %-20s |\n| Duración   | %-20s |\n| Estado     | %-20s |\n\n",
-		s.Number,
-		s.StartTime.Format("15:04"),
-		task,
-		s.StartTime.Format("15:04"),
-		s.EndTime.Format("15:04"),
-		formatDuration(s.Duration),
-		string(s.Status),
-	)
+	lines := []string{
+		fmt.Sprintf("## Sesión %d — %s", s.Number, s.StartTime.Format("15:04")),
+		"",
+		"| Campo      | Valor       |",
+		"|------------|-------------|",
+		fmt.Sprintf("| Tarea      | %s |", task),
+		fmt.Sprintf("| Inicio     | %s |", s.StartTime.Format("15:04")),
+		fmt.Sprintf("| Fin        | %s |", s.EndTime.Format("15:04")),
+		fmt.Sprintf("| Duración   | %s |", formatDuration(s.Duration)),
+		fmt.Sprintf("| Estado     | %s |", string(s.Status)),
+		"",
+		"",
+	}
+	return strings.Join(lines, "\n")
 }
 
 func formatDuration(d time.Duration) string {
@@ -74,5 +79,7 @@ func WriteSession(logDir string, s Session) error {
 
 	sb.WriteString(FormatSession(s))
 
+	// Note: read-modify-write is not atomic. Safe for single-process CLI use;
+	// do not call concurrently for the same logDir/date combination.
 	return os.WriteFile(filename, []byte(sb.String()), 0644)
 }

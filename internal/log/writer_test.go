@@ -70,6 +70,25 @@ func TestWriteSessionCreatesFile(t *testing.T) {
 	}
 }
 
+func TestFormatSessionEmptyTask(t *testing.T) {
+	start := time.Date(2026, 2, 26, 10, 0, 0, 0, time.Local)
+	end := time.Date(2026, 2, 26, 10, 25, 0, 0, time.Local)
+	s := pomlog.Session{
+		Task:      "",
+		StartTime: start,
+		EndTime:   end,
+		Duration:  25 * time.Minute,
+		Status:    pomlog.StatusCompleted,
+		Number:    2,
+	}
+
+	result := pomlog.FormatSession(s)
+
+	if !strings.Contains(result, "—") {
+		t.Errorf("expected em dash for empty task, got:\n%s", result)
+	}
+}
+
 func TestWriteSessionAppends(t *testing.T) {
 	dir := t.TempDir()
 	base := time.Date(2026, 2, 26, 9, 0, 0, 0, time.Local)
