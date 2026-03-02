@@ -3,6 +3,7 @@ package notify
 import (
 	"os/exec"
 	"runtime"
+	"strings"
 )
 
 // Send sends an OS desktop notification with the given title and body.
@@ -12,7 +13,9 @@ func Send(title, body string) {
 	case "linux":
 		exec.Command("notify-send", title, body).Run() //nolint:errcheck
 	case "darwin":
-		script := `display notification "` + body + `" with title "` + title + `"`
+		safeTitle := strings.ReplaceAll(title, `"`, `\"`)
+		safeBody := strings.ReplaceAll(body, `"`, `\"`)
+		script := `display notification "` + safeBody + `" with title "` + safeTitle + `"`
 		exec.Command("osascript", "-e", script).Run() //nolint:errcheck
 	}
 }
