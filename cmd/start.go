@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -42,8 +43,11 @@ func runStart(cmd *cobra.Command, args []string) error {
 
 	m, ok := finalModel.(tui.TimerModel)
 	if !ok {
+		fmt.Fprintln(os.Stderr, "warning: unexpected model type; session not logged")
 		return nil
 	}
+
+	endTime := time.Now()
 
 	status := pomlog.StatusCancelled
 	if m.PomCount() > 0 {
@@ -54,15 +58,16 @@ func runStart(cmd *cobra.Command, args []string) error {
 		Number:    m.PomCount(),
 		Task:      taskFlag,
 		StartTime: startTime,
-		EndTime:   time.Now(),
-		Duration:  time.Since(startTime).Round(time.Minute),
+		EndTime:   endTime,
+		Duration:  endTime.Sub(startTime).Round(time.Minute),
 		Status:    status,
 	}
 
 	if err := pomlog.WriteSession(cfg.Logs.Directory, session); err != nil {
 		fmt.Fprintf(os.Stderr, "warning: could not write log: %v\n", err)
 	} else {
-		fmt.Printf("Log guardado en %s/%s.md\n", cfg.Logs.Directory, startTime.Format("2006-01-02"))
+		logPath := filepath.Join(cfg.Logs.Directory, startTime.Format("2006-01-02")+".md")
+		fmt.Printf("Log guardado en %s\n", logPath)
 	}
 
 	return nil
