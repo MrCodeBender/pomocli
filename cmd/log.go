@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,14 +30,20 @@ func runLog(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
+	const dateLayout = "2006-01-02"
+
 	date := dateFlag
 	if date == "" {
-		date = time.Now().Format("2006-01-02")
+		date = time.Now().Format(dateLayout)
+	} else {
+		if _, err := time.Parse(dateLayout, date); err != nil {
+			return fmt.Errorf("invalid date %q: expected YYYY-MM-DD format", date)
+		}
 	}
 
 	filename := filepath.Join(cfg.Logs.Directory, date+".md")
 	data, err := os.ReadFile(filename)
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		fmt.Printf("No hay log para %s\n", date)
 		return nil
 	}

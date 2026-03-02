@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -8,33 +9,33 @@ import (
 )
 
 type PomodoroConfig struct {
-	WorkDuration   int `mapstructure:"work_duration"`
-	ShortBreak     int `mapstructure:"short_break"`
-	LongBreak      int `mapstructure:"long_break"`
-	LongBreakAfter int `mapstructure:"long_break_after"`
+	WorkDuration   int `mapstructure:"work_duration"    yaml:"work_duration"`
+	ShortBreak     int `mapstructure:"short_break"      yaml:"short_break"`
+	LongBreak      int `mapstructure:"long_break"       yaml:"long_break"`
+	LongBreakAfter int `mapstructure:"long_break_after" yaml:"long_break_after"`
 }
 
 type NotificationsConfig struct {
-	Enabled   bool   `mapstructure:"enabled"`
-	Sound     bool   `mapstructure:"sound"`
-	SoundFile string `mapstructure:"sound_file"`
+	Enabled   bool   `mapstructure:"enabled"    yaml:"enabled"`
+	Sound     bool   `mapstructure:"sound"      yaml:"sound"`
+	SoundFile string `mapstructure:"sound_file" yaml:"sound_file"`
 }
 
 type LogsConfig struct {
-	Directory  string `mapstructure:"directory"`
-	DateFormat string `mapstructure:"date_format"`
+	Directory  string `mapstructure:"directory"   yaml:"directory"`
+	DateFormat string `mapstructure:"date_format" yaml:"date_format"`
 }
 
 type DisplayConfig struct {
-	Theme           string `mapstructure:"theme"`
-	ShowProgressBar bool   `mapstructure:"show_progress_bar"`
+	Theme           string `mapstructure:"theme"             yaml:"theme"`
+	ShowProgressBar bool   `mapstructure:"show_progress_bar" yaml:"show_progress_bar"`
 }
 
 type Config struct {
-	Pomodoro      PomodoroConfig      `mapstructure:"pomodoro"`
-	Notifications NotificationsConfig `mapstructure:"notifications"`
-	Logs          LogsConfig          `mapstructure:"logs"`
-	Display       DisplayConfig       `mapstructure:"display"`
+	Pomodoro      PomodoroConfig      `mapstructure:"pomodoro"      yaml:"pomodoro"`
+	Notifications NotificationsConfig `mapstructure:"notifications" yaml:"notifications"`
+	Logs          LogsConfig          `mapstructure:"logs"          yaml:"logs"`
+	Display       DisplayConfig       `mapstructure:"display"       yaml:"display"`
 }
 
 func setDefaults(v *viper.Viper) {
@@ -95,7 +96,7 @@ func LoadDefault() (Config, error) {
 		home = os.Getenv("HOME")
 	}
 	path := filepath.Join(home, ".config/pomocli/config.yaml")
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, statErr := os.Stat(path); errors.Is(statErr, os.ErrNotExist) {
 		return Defaults(), nil
 	}
 	return Load(path)
