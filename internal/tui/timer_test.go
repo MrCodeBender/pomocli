@@ -94,3 +94,44 @@ func TestAfterLongBreakAfterPomodoros_GoesToLongBreak(t *testing.T) {
 		t.Errorf("expected StateLongBreak after %d pomodoros, got %v", cfg.Pomodoro.LongBreakAfter, m4.State())
 	}
 }
+
+func TestTickToZeroAdvancesState(t *testing.T) {
+	cfg := defaultConfig()
+
+	// Set remaining to 1 second by sending ticks until remaining = 1s
+	// Instead, use the exported constructor and manually drain via ticks
+	// We need to drain a 1-minute timer — use a very short config
+	cfg.Pomodoro.WorkDuration = 1 // 1 minute = 60 ticks
+	m2 := tui.NewTimer("task", cfg)
+
+	// Send 59 ticks — should still be Working
+	for i := 0; i < 59; i++ {
+		updated, _ := m2.Update(tui.TickMsg())
+		m2 = updated.(tui.TimerModel)
+	}
+	if m2.State() != tui.StateWorking {
+		t.Errorf("expected still Working after 59 ticks, got %v", m2.State())
+	}
+
+	// Send 1 more tick — remaining hits 0, should advance to ShortBreak
+	updated, _ := m2.Update(tui.TickMsg())
+	m2 = updated.(tui.TimerModel)
+	if m2.State() != tui.StateShortBreak {
+		t.Errorf("expected ShortBreak after timer expires, got %v", m2.State())
+	}
+	if m2.PomCount() != 1 {
+		t.Errorf("expected PomCount=1 after first pomodoro, got %d", m2.PomCount())
+	}
+}
+
+func TestQuitSetsDone(t *testing.T) {
+	m := tui.NewTimer("task", defaultConfig())
+	if m.Done() {
+		t.Error("expected Done=false initially")
+	}
+	updated, _ := m.Update(tui.KeyMsg("q"))
+	m2 := updated.(tui.TimerModel)
+	if !m2.Done() {
+		t.Error("expected Done=true after pressing q")
+	}
+}

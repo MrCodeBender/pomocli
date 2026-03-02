@@ -97,7 +97,7 @@ func (m TimerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.paused = !m.paused
 		case "s":
 			m = m.advance(false)
-		case "q", "ctrl+c":
+		case "q":
 			m.done = true
 			return m, tea.Quit
 		}
@@ -129,7 +129,7 @@ func (m TimerModel) advance(fromTick bool) TimerModel {
 				notify.Beep(m.cfg.Notifications.SoundFile)
 			}
 		}
-		if m.pomCount%m.cfg.Pomodoro.LongBreakAfter == 0 {
+		if m.cfg.Pomodoro.LongBreakAfter > 0 && m.pomCount%m.cfg.Pomodoro.LongBreakAfter == 0 {
 			m.state = StateLongBreak
 			m.total = time.Duration(m.cfg.Pomodoro.LongBreak) * time.Minute
 		} else {
@@ -175,7 +175,7 @@ func (m TimerModel) View() string {
 	if m.state == StateWorking {
 		header = titleStyle.Render(fmt.Sprintf("Pomodoro #%d  [%s]", m.pomCount+1, task))
 	} else {
-		header = titleStyle.Render(fmt.Sprintf("%s", m.state.String()))
+		header = titleStyle.Render(m.state.String())
 	}
 
 	mins := int(m.remaining.Minutes())
@@ -205,10 +205,16 @@ func renderProgressBar(remaining, total time.Duration) string {
 	}
 	elapsed := total - remaining
 	filled := int(float64(elapsed) / float64(total) * float64(width))
+	if filled < 0 {
+		filled = 0
+	}
 	if filled > width {
 		filled = width
 	}
 	pct := int(float64(elapsed) / float64(total) * 100)
+	if pct < 0 {
+		pct = 0
+	}
 	if pct > 100 {
 		pct = 100
 	}
