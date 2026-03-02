@@ -45,7 +45,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("notifications.enabled", true)
 	v.SetDefault("notifications.sound", true)
 	v.SetDefault("notifications.sound_file", "")
-	v.SetDefault("logs.directory", filepath.Join(os.Getenv("HOME"), ".local/share/pomocli/logs"))
+	v.SetDefault("logs.directory", "") // set dynamically in callers
 	v.SetDefault("logs.date_format", "2006-01-02")
 	v.SetDefault("display.theme", "default")
 	v.SetDefault("display.show_progress_bar", true)
@@ -53,17 +53,29 @@ func setDefaults(v *viper.Viper) {
 
 // Defaults returns a Config populated with default values.
 func Defaults() Config {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = os.Getenv("HOME") // fallback
+	}
 	v := viper.New()
 	setDefaults(v)
+	v.SetDefault("logs.directory", filepath.Join(home, ".local/share/pomocli/logs"))
 	var cfg Config
-	v.Unmarshal(&cfg)
+	if err := v.Unmarshal(&cfg); err != nil {
+		panic("config: failed to unmarshal defaults: " + err.Error())
+	}
 	return cfg
 }
 
 // Load reads a config file from path, falling back to defaults for missing fields.
 func Load(path string) (Config, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = os.Getenv("HOME")
+	}
 	v := viper.New()
 	setDefaults(v)
+	v.SetDefault("logs.directory", filepath.Join(home, ".local/share/pomocli/logs"))
 	v.SetConfigFile(path)
 	if err := v.ReadInConfig(); err != nil {
 		return Config{}, err
@@ -78,7 +90,11 @@ func Load(path string) (Config, error) {
 // LoadDefault loads config from ~/.config/pomocli/config.yaml.
 // Returns defaults if the file doesn't exist.
 func LoadDefault() (Config, error) {
-	path := filepath.Join(os.Getenv("HOME"), ".config/pomocli/config.yaml")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = os.Getenv("HOME")
+	}
+	path := filepath.Join(home, ".config/pomocli/config.yaml")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return Defaults(), nil
 	}

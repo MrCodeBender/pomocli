@@ -42,7 +42,9 @@ pomodoro:
   work_duration: 30
   short_break: 10
 `
-	os.WriteFile(configFile, []byte(content), 0644)
+	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
 
 	cfg, err := config.Load(configFile)
 	if err != nil {
